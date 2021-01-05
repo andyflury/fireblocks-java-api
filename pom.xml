@@ -2,10 +2,11 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.fireblocks</groupId>
-  <artifactId>fireblocks-api</artifactId>
+  <artifactId>fireblocks-java-api</artifactId>
   <packaging>jar</packaging>
-  <name>Fireblocks api</name>
+  <name>Fireblocks Java API</name>
   <version>1.0</version>
+  
   <prerequisites>
     <maven>2.2.0</maven>
   </prerequisites>
@@ -81,20 +82,22 @@
 		                <inputSpec>${project.basedir}/src/main/resources/fireblocks.json</inputSpec>
 		                <language>java</language>
 		                <library>resttemplate</library>
-		                <configHelp>true</configHelp>
 		                <modelPackage>io.fireblocks.client.model</modelPackage>
 		                <invokerPackage>io.fireblocks.client.invoker</invokerPackage>
 		                <apiPackage>io.fireblocks.client.api</apiPackage>
 		                <groupId>io.fireblocks</groupId>
-		                <artifactId>api</artifactId>
+		                <artifactId>fireblocks-java-api</artifactId>
 		                <artifactVersion>1.0</artifactVersion>
 		                <generateSupportingFiles>false</generateSupportingFiles>
 		                <generateApiTests>false</generateApiTests>
 		                <generateModelTests>false</generateModelTests>
 		                <generateApiDocumentation>false</generateApiDocumentation>
-<!-- 		                <configOptions> -->
-<!-- 		                   <sourceFolder>src/gen/java/main</sourceFolder> -->
-<!-- 		                </configOptions> -->
+				<!-- 	<configHelp>true</configHelp> -->
+		                <configOptions>
+			                <notNullJacksonAnnotation>true</notNullJacksonAnnotation>
+			                <java8>true</java8>
+			                <dateLibrary>java8</dateLibrary>
+		                </configOptions>
 		            </configuration>
 		        </execution>
 		    </executions>

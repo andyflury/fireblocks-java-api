@@ -2,7 +2,6 @@ package io.fireblocks.client.invoker.auth;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.lang3.time.DateUtils;
@@ -17,6 +16,8 @@ import java.security.PrivateKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.util.Date;
 
+import io.fireblocks.client.invoker.ApiException;
+
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2021-01-03T11:00:41.617883+01:00[Europe/Berlin]")
 public class HttpBearerAuth implements Authentication {
 
@@ -29,12 +30,15 @@ public class HttpBearerAuth implements Authentication {
         this.apiKey = apiKey;
     }
 
-    public void setPrivateKey(File privateKeyFile) throws Exception {
-        PrivateKey privateKey = PemUtils.readPrivateKeyFromFile(privateKeyFile, "RSA");
-        algorithm = Algorithm.RSA256(null, (RSAPrivateKey) privateKey);
-        digest = MessageDigest.getInstance("SHA-256");
-        mapper = new ObjectMapper();
-        mapper.setSerializationInclusion(Include.NON_NULL);
+    public void initPrivateKey(File privateKeyFile) {
+        try {
+            PrivateKey privateKey = PemUtils.readPrivateKeyFromFile(privateKeyFile, "RSA");
+            algorithm = Algorithm.RSA256(null, (RSAPrivateKey) privateKey);
+            digest = MessageDigest.getInstance("SHA-256");
+            mapper = new ObjectMapper();
+        } catch (Exception e) {
+            throw new ApiException("problem initializing private key", e);
+        }
     }
 
     @Override
@@ -49,7 +53,7 @@ public class HttpBearerAuth implements Authentication {
             Date now = new Date();
             String token = JWT.create()
                     .withIssuer("auth0")
-                    .withClaim("uri", "/v1" + path)
+                    .withClaim("uri", path)
                     .withClaim("nonce", now.getTime())
                     .withIssuedAt(now)
                     .withExpiresAt(DateUtils.addSeconds(now, 10))
@@ -59,7 +63,7 @@ public class HttpBearerAuth implements Authentication {
 
             headerParams.add(HttpHeaders.AUTHORIZATION, "Bearer " + token);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new ApiException("problem signing request", e);
         }
     }
 

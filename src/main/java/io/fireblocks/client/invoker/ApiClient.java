@@ -1,6 +1,5 @@
 package io.fireblocks.client.invoker;
 
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.threetenbp.ThreeTenModule;
 
@@ -77,7 +76,8 @@ public class ApiClient {
     
     private HttpHeaders defaultHeaders = new HttpHeaders();
     
-    private String basePath = "https://api.fireblocks.io/v1";
+    private String serverUrl = "https://api.fireblocks.io";
+    private String apiVersion = "/v1";
 
     private RestTemplate restTemplate;
 
@@ -116,24 +116,6 @@ public class ApiClient {
         authentications.put("bearerTokenAuth", new HttpBearerAuth());
         // Prevent the authentications from being modified.
         authentications = Collections.unmodifiableMap(authentications);
-    }
-    
-    /**
-     * Get the current base path
-     * @return String the base path
-     */
-    public String getBasePath() {
-        return basePath;
-    }
-
-    /**
-     * Set the base path, which should include the host
-     * @param basePath the base path
-     * @return ApiClient this client
-     */
-    public ApiClient setBasePath(String basePath) {
-        this.basePath = basePath;
-        return this;
     }
 
     /**
@@ -204,10 +186,10 @@ public class ApiClient {
         throw new RuntimeException("No API key authentication configured!");
     }
 
-    public void setPrivateKey(File privateKey) throws Exception {
+    public void initPrivateKey(File privateKey) {
         for (Authentication auth : authentications.values()) {
             if (auth instanceof HttpBearerAuth) {
-                ((HttpBearerAuth) auth).setPrivateKey(privateKey);
+                ((HttpBearerAuth) auth).initPrivateKey(privateKey);
                 return;
             }
         }
@@ -482,9 +464,9 @@ public class ApiClient {
      * @return The response body in chosen type
      */
     public <T> T invokeAPI(String path, HttpMethod method, MultiValueMap<String, String> queryParams, Object body, HttpHeaders headerParams, MultiValueMap<String, Object> formParams, List<MediaType> accept, MediaType contentType, String[] authNames, ParameterizedTypeReference<T> returnType) throws RestClientException {
-        updateParamsForAuth(path, body, authNames, queryParams, headerParams);
+        updateParamsForAuth(apiVersion + path, body, authNames, queryParams, headerParams);
         
-        final UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(basePath).path(path);
+        final UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(serverUrl + apiVersion).path(path);
         if (queryParams != null) {
             builder.queryParams(queryParams);
         }
@@ -550,7 +532,6 @@ public class ApiClient {
                 module.addDeserializer(OffsetDateTime.class, CustomInstantDeserializer.OFFSET_DATE_TIME);
                 module.addDeserializer(ZonedDateTime.class, CustomInstantDeserializer.ZONED_DATE_TIME);
                 mapper.registerModule(module);
-                mapper.setSerializationInclusion(Include.NON_NULL);
             }
         }
         // This allows us to read the response more than once - Necessary for debugging.
