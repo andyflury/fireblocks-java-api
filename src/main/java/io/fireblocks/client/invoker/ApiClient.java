@@ -26,6 +26,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -483,23 +484,28 @@ public class ApiClient {
         addHeadersToRequest(defaultHeaders, requestBuilder);
         
         RequestEntity<Object> requestEntity = requestBuilder.body(selectBody(body, formParams, contentType));
-
-        ResponseEntity<T> responseEntity = restTemplate.exchange(requestEntity, returnType);
         
-        statusCode = responseEntity.getStatusCode();
-        responseHeaders = responseEntity.getHeaders();
+        try {
+            ResponseEntity<T> responseEntity = restTemplate.exchange(requestEntity, returnType);
 
-        if (responseEntity.getStatusCode() == HttpStatus.NO_CONTENT) {
-            return null;
-        } else if (responseEntity.getStatusCode().is2xxSuccessful()) {
-            if (returnType == null) {
+            statusCode = responseEntity.getStatusCode();
+            responseHeaders = responseEntity.getHeaders();
+
+            if (responseEntity.getStatusCode() == HttpStatus.NO_CONTENT) {
                 return null;
+            } else if (responseEntity.getStatusCode().is2xxSuccessful()) {
+                if (returnType == null) {
+                    return null;
+                }
+                return responseEntity.getBody();
+            } else {
+                // The error handler built into the RestTemplate should handle 400 and 500 series errors.
+                throw new RestClientException("API returned " + statusCode + " and it wasn't handled by the RestTemplate error handler");
             }
-            return responseEntity.getBody();
-        } else {
-            // The error handler built into the RestTemplate should handle 400 and 500 series errors.
-            throw new RestClientException("API returned " + statusCode + " and it wasn't handled by the RestTemplate error handler");
+        } catch (HttpClientErrorException e) {
+            throw new ApiException(e.getResponseBodyAsString());
         }
+
     }
     
     /**
